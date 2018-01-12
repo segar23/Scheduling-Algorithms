@@ -7,6 +7,7 @@ struct Process {
     int waitTime;
     int turnAroundTime;
     int arrivingTime;
+    int isProcessing;
 };
 
 //This will calculate the Wait Time for each Process according to the algorithm
@@ -86,9 +87,49 @@ void shortestJobNext (struct Process queue[], int size) {
     averageWaitingTime(queue, size);
 }
 
+//Round Robin Algorithm
+struct Process * roundRobin (struct Process queue[], int size, int quantum) {
+    int iterator = 0;
+    int flag = 0;
+    int time = 0;
+    quickSort(queue, 0, size - 1);
+
+    while (flag == 0) {
+        for (int k = 0; k < quantum; k++) {
+            queue[iterator].isProcessing = 1;
+            int flagProcessingTime = 0;
+            for (int i = 0; i < size; i++) {
+                if (queue[i].arrivingTime <= time && queue[i].processingTime > 0) {
+                    flagProcessingTime++;
+                    switch (queue[i].isProcessing) {
+                        case 1:
+                            queue[i].processingTime--;
+                            queue[i].turnAroundTime++;
+                            break;
+                        case 0:
+                            queue[i].waitTime++;
+                            queue[i].turnAroundTime++;
+                            break;
+                    }
+                }
+            }
+            time++;
+            queue[iterator].isProcessing = 0;
+            if (flagProcessingTime == 0) {
+                flag = 1;
+            }
+        }
+        iterator++;
+        iterator = iterator % size;
+    }
+
+    averageWaitingTime(queue, size);
+
+}
+
 int main() {
     //Array with processes with their id and processing time
-    struct Process queue[] = {{1, 6, 0, 0, 4}, {2, 8, 0, 0, 2}, {3, 7, 0, 0, 0}, {4, 3, 0, 0, 6}, {5, 1, 0, 0, 1}};
+    struct Process queue[] = {{1, 6, 0, 0, 4, 0}, {2, 8, 0, 0, 2, 0}, {3, 7, 0, 0, 0, 0}, {4, 3, 0, 0, 6, 0}, {5, 1, 0, 0, 1, 0}};
 
     //This will help determine the number of items in the array
     int size = sizeof(queue)/sizeof(struct Process);
@@ -98,8 +139,9 @@ int main() {
      * Note that you shouldn't use multiple at the same time since they will
      * affect the same array and you might get biased results
      */
-    firstServeFirstCome(queue, size);
+    //firstServeFirstCome(queue, size);
     //shortestJobNext(queue, size);
+    roundRobin(queue, size, 3);
     printf(" ProcessID  Processing Time  Wait Time  Turnaround Time  Arrival Time\n");
 
     for (int i = 0; i < size; i++) {
