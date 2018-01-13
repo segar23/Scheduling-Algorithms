@@ -91,16 +91,28 @@ void shortestJobNext (struct Process queue[], int size) {
 struct Process * roundRobin (struct Process queue[], int size, int quantum) {
     int iterator = 0;
     int flag = 0;
-    int time = 0;
+    int time = 0;   //The time variable to manage waiting, turnaround and incoming processes
     quickSort(queue, 0, size - 1);
 
+    //This while loop is to control the whole scheduling
     while (flag == 0) {
+
+        //This loop is to make sure every process is only executed withing the quantum
         for (int k = 0; k < quantum; k++) {
             queue[iterator].isProcessing = 1;
             int flagProcessingTime = 0;
+
+            //Since we are not using Threading, this loop is to make sure every process is considered within each time unit
             for (int i = 0; i < size; i++) {
+
+                //This will make sure that we only affect the process that have actually arrive to the scheduler
                 if (queue[i].arrivingTime <= time && queue[i].processingTime > 0) {
                     flagProcessingTime++;
+
+                    /**
+                     * If the process isProcessing, remove processing time.
+                     * If is not processing, just add to the wait time.
+                     */
                     switch (queue[i].isProcessing) {
                         case 1:
                             queue[i].processingTime--;
@@ -115,8 +127,11 @@ struct Process * roundRobin (struct Process queue[], int size, int quantum) {
             }
             time++;
             queue[iterator].isProcessing = 0;
+
+            //Once al processes get to 0, this will finish execution of the scheduler
             if (flagProcessingTime == 0) {
                 flag = 1;
+                break;
             }
         }
         iterator++;
