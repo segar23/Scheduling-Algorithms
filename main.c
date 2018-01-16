@@ -7,6 +7,7 @@ struct Process {
     int waitTime;
     int turnAroundTime;
     int arrivingTime;
+    int priority;
 };
 
 //This will calculate the Wait Time for each Process according to the algorithm
@@ -47,11 +48,11 @@ void swap(struct Process * a, struct Process * b)
 
 //This method aids the pivot for Quick Sort
 int partition (struct Process queue[], int low, int high) {
-    int pivot = queue[high].arrivingTime;
+    int pivot = queue[high].priority;
     int i = low - 1;
 
     for (int j = low; j <= high - 1; j++) {
-        if (queue[j].arrivingTime <= pivot) {
+        if (queue[j].priority <= pivot) {
             i++;
             swap(&queue[i],&queue[j]);
         }
@@ -70,16 +71,8 @@ void quickSort (struct Process queue[], int low, int high) {
     }
 }
 
-//First Server First Come scheduling algorithm
-void firstServeFirstCome (struct Process queue[], int size) {
-    quickSort(queue, 0, size - 1);
-    queue = calculateWaitTime(queue, size);
-    queue = calculateTurnAround(queue, size);
-    averageWaitingTime(queue, size);
-}
-
-//Shortest Job Next scheduling algorithm
-void shortestJobNext (struct Process queue[], int size) {
+// Priority Based scheduling algorithm
+void priorityBased(struct Process *queue, int size) {
     quickSort(queue, 0, size - 1);
     queue = calculateWaitTime(queue, size);
     queue = calculateTurnAround(queue, size);
@@ -88,18 +81,12 @@ void shortestJobNext (struct Process queue[], int size) {
 
 int main() {
     //Array with processes with their id and processing time
-    struct Process queue[] = {{1, 6, 0, 0, 4}, {2, 8, 0, 0, 2}, {3, 7, 0, 0, 0}, {4, 3, 0, 0, 6}, {5, 1, 0, 0, 1}};
+    struct Process queue[] = {{1, 6, 0, 0, 4, 1}, {2, 8, 0, 0, 2, 3}, {3, 7, 0, 0, 0, 3}, {4, 3, 0, 0, 6, 2}, {5, 1, 0, 0, 1, 1}};
 
     //This will help determine the number of items in the array
     int size = sizeof(queue)/sizeof(struct Process);
 
-    /*
-     * Feel free to comment or uncomment the algorithm you want to use.
-     * Note that you shouldn't use multiple at the same time since they will
-     * affect the same array and you might get biased results
-     */
-    firstServeFirstCome(queue, size);
-    //shortestJobNext(queue, size);
+    priorityBased(queue, size);
     printf(" ProcessID  Processing Time  Wait Time  Turnaround Time  Arrival Time\n");
 
     for (int i = 0; i < size; i++) {
