@@ -10,22 +10,6 @@ struct Process {
     int isProcessing;
 };
 
-//This will calculate the Wait Time for each Process according to the algorithm
-struct Process * calculateWaitTime (struct Process queue[], int size) {
-    for (int i = 1; i < size; i++) {
-        queue[i].waitTime = queue[i - 1].processingTime + queue[i - 1].waitTime - queue[i].arrivingTime;
-    }
-    return queue;
-}
-
-//This will calculate how much time take a process to wait and be executed
-struct Process * calculateTurnAround (struct Process queue[], int size) {
-    for (int i = 0; i < size; i++) {
-        queue[i].turnAroundTime = queue[i].processingTime + queue[i].waitTime;
-    }
-    return queue;
-}
-
 //This will give us an average of the waiting time for each process
 void averageWaitingTime (struct Process queue[], int size) {
     float average = 0;
@@ -71,24 +55,8 @@ void quickSort (struct Process queue[], int low, int high) {
     }
 }
 
-//First Server First Come scheduling algorithm
-void firstServeFirstCome (struct Process queue[], int size) {
-    quickSort(queue, 0, size - 1);
-    queue = calculateWaitTime(queue, size);
-    queue = calculateTurnAround(queue, size);
-    averageWaitingTime(queue, size);
-}
-
-//Shortest Job Next scheduling algorithm
-void shortestJobNext (struct Process queue[], int size) {
-    quickSort(queue, 0, size - 1);
-    queue = calculateWaitTime(queue, size);
-    queue = calculateTurnAround(queue, size);
-    averageWaitingTime(queue, size);
-}
-
-//Round Robin Algorithm
-struct Process * roundRobin (struct Process queue[], int size, int quantum) {
+//Shortest Job Next
+struct Process * shortestJobNext(struct Process *queue, int size) {
     int iterator = 0;
     int flag = 0;
     int time = 0;   //The time variable to manage waiting, turnaround and incoming processes
@@ -96,46 +64,48 @@ struct Process * roundRobin (struct Process queue[], int size, int quantum) {
 
     //This while loop is to control the whole scheduling
     while (flag == 0) {
+        int temp = iterator;
+        queue[iterator].isProcessing = 1;
+        int flagProcessingTime = 0;
 
-        //This loop is to make sure every process is only executed withing the quantum
-        for (int k = 0; k < quantum; k++) {
-            queue[iterator].isProcessing = 1;
-            int flagProcessingTime = 0;
+        //This loop is to make sure every process is considered each unit of time
+        for (int k = 0; k < size; k++) {
+            //This will make sure that we only affect the process that have actually arrive to the scheduler
+            if (queue[k].arrivingTime <= time && queue[k].processingTime > 0) {
+                flagProcessingTime++;
 
-            //Since we are not using Threading, this loop is to make sure every process is considered within each time unit
-            for (int i = 0; i < size; i++) {
-
-                //This will make sure that we only affect the process that have actually arrive to the scheduler
-                if (queue[i].arrivingTime <= time && queue[i].processingTime > 0) {
-                    flagProcessingTime++;
-
-                    /**
-                     * If the process isProcessing, remove processing time.
-                     * If is not processing, just add to the wait time.
-                     */
-                    switch (queue[i].isProcessing) {
-                        case 1:
-                            queue[i].processingTime--;
-                            queue[i].turnAroundTime++;
-                            break;
-                        case 0:
-                            queue[i].waitTime++;
-                            queue[i].turnAroundTime++;
-                            break;
-                    }
+                /**
+                 * If the process isProcessing, remove processing time.
+                 * If is not processing, add to the wait time and check if the process has shorter execution time.
+                 * Also, check if the iterator is over a process with 0 processing time and change it.
+                 */
+                switch (queue[k].isProcessing) {
+                    case 1:
+                        queue[k].processingTime--;
+                        queue[k].turnAroundTime++;
+                        break;
+                    case 0:
+                        queue[k].waitTime++;
+                        queue[k].turnAroundTime++;
+                        if ((queue[k].processingTime < queue[iterator].processingTime && queue[k].processingTime > 0) ||
+                                queue[iterator].processingTime == 0) {
+                            queue[iterator].isProcessing = 0;
+                            temp = k;
+                        }
+                        break;
                 }
             }
-            time++;
-            queue[iterator].isProcessing = 0;
-
-            //Once al processes get to 0, this will finish execution of the scheduler
-            if (flagProcessingTime == 0) {
-                flag = 1;
-                break;
-            }
         }
-        iterator++;
-        iterator = iterator % size;
+        //Once al processes get to 0, this will finish execution of the scheduler
+        if (flagProcessingTime == 0) {
+            break;
+        }
+        time++;
+
+        //This will check if the scheduler should process the same process or switch to a shorter one
+        if (iterator != temp) {
+            iterator = temp;
+        }
     }
 
     averageWaitingTime(queue, size);
@@ -149,14 +119,7 @@ int main() {
     //This will help determine the number of items in the array
     int size = sizeof(queue)/sizeof(struct Process);
 
-    /*
-     * Feel free to comment or uncomment the algorithm you want to use.
-     * Note that you shouldn't use multiple at the same time since they will
-     * affect the same array and you might get biased results
-     */
-    //firstServeFirstCome(queue, size);
-    //shortestJobNext(queue, size);
-    roundRobin(queue, size, 3);
+    shortestJobNext(queue, size);
     printf(" ProcessID  Processing Time  Wait Time  Turnaround Time  Arrival Time\n");
 
     for (int i = 0; i < size; i++) {
